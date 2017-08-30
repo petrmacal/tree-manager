@@ -6,7 +6,7 @@ import { Node } from './model/node';
 import { TreeService } from './tree.service';
 
 @Component({
-  selector: 'tree',
+  selector: 'tree-container',
   templateUrl: './tree.component.html',
   styleUrls: ['./tree.component.css'],
 })
@@ -17,6 +17,28 @@ export class TreeComponent implements OnInit {
   	nodes: Node[];
   	selectedNode: Node;
 
+  	traverseNodes():void {
+
+  		let _nodes = this.nodes;
+
+		for(let i = _nodes.length-1; i >= 0; i--) {
+			// If the node is already traversed, skip it
+			if(_nodes[i].traversed) continue;
+
+			let pid = null;
+			if(_nodes[i].parent !== null) pid = _nodes[i].parent;
+			
+			if(pid !== null) {
+				_nodes[this.getIndex(pid,_nodes)].children.push(_nodes[i]);
+			}
+
+			_nodes[i].traversed = true;
+		}
+
+		console.log(_nodes);
+
+  	}
+
 	add(pid: number, data: string): void {
 	  if(this.nodes.length !== 0 && !this.contains(pid)) {
 	  	alert('This ID does not exists');
@@ -25,7 +47,7 @@ export class TreeComponent implements OnInit {
 	  if (pid == null) { pid = null; }
 	  this.treeService.create(pid,data)
 	    .then(
-	    	(node) => this.nodes.push(node)
+	    	(node) => { this.nodes.push(node); this.traverseNodes(); }
 	    );
 	}
 
@@ -37,12 +59,20 @@ export class TreeComponent implements OnInit {
 	}
 
 	deleteNode(node: Node):void {
-	  this.treeService
-	      .delete(node)
-	      .then(() => {
-	        this.nodes = this.nodes.filter(n => n !== node);
-	        if (this.selectedNode === node) { this.selectedNode = null; }
-	   });
+		this.treeService
+		  .delete(node)
+		  .then(() => {
+		  	// Move childs of selected node to its parent node
+		  	node.children.forEach(((n) => n.parent = this.selectedNode.parent),this);
+		    this.nodes = this.nodes.filter(n => n !== node);
+		    if(node.parent !== null && this.nodes[node.parent]) {
+		    	let _index = this.getIndex(node.id,this.nodes[node.parent].children);
+		  		this.nodes[node.parent].children.splice(_index,1);
+		    }
+		    if (this.selectedNode === node) { this.selectedNode = null; }
+
+		    this.traverseNodes();
+		});
 	}
 
 	saveNode(event:boolean) {
@@ -62,6 +92,12 @@ export class TreeComponent implements OnInit {
   		this.getNodes();
   		console.log(this.tree);
 
+  	}
+
+  	private getIndex(id, arr):number {
+  		for(let i = 0; i < arr.length; i++) {
+  			if(arr[i].id == id) return i;
+  		}
   	}
 
 }

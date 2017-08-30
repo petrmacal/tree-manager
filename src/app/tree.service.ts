@@ -24,7 +24,7 @@ export class TreeService {
 
 	create(pid: number, data: string): Promise<Node> {
 		return this.http
-			.post(this.apiUrl, JSON.stringify({parent: pid, data: data}), {headers: this.headers})
+			.post(this.apiUrl, JSON.stringify({parent: pid, data: data, children: []}), {headers: this.headers})
 			.toPromise()
 			.then(response => response.json().data as Node)
 			.catch(this.handleError);

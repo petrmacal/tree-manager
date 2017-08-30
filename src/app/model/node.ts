@@ -3,4 +3,7 @@ export class Node {
 	data: string;
 	parent: number|null;
 	children?: [Node];
+	traversed?: boolean;
+
+	constructor() { this.traversed = false; }
 }

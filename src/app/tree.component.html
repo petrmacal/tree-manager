@@ -4,6 +4,7 @@
 	<button (click)="add(pid.value,data.value)">Add node</button>
 </form>
 
+<h2>Select tree</h2>
 <ul class="tree">
     <li *ngFor="let node of nodes" [class.selected]="node === selectedNode" (click)="onSelect(node)">
       <span class="id">ID#{{node.id}}, PID#{{node.parent}}</span>
@@ -12,3 +13,5 @@
 </ul>
 
  <node-detail [node]="selectedNode" (deleteNode)="deleteNode($event)" (saveNode)="saveNode($event)"></node-detail>
+
+ <tree *ngIf="selectedNode" [nodes]="selectedNode.children"></tree>

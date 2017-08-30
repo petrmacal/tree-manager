@@ -9,6 +9,7 @@ import { InMemoryDataService }  from './in-memory-data.service';
 
 import { AppComponent } from './app.component';
 import { TreeComponent } from './tree.component';
+import { TreeDrawComponent } from './tree-draw.component';
 import { TreeService } from './tree.service';
 import { NodeCompontent } from './node/node_detail.component';
 import { NodeAddComponent } from './node/node_add.component';
@@ -17,6 +18,7 @@ import { NodeAddComponent } from './node/node_add.component';
   declarations: [
     AppComponent,
     TreeComponent,
+    TreeDrawComponent,
     NodeCompontent,
     NodeAddComponent  
   ],
