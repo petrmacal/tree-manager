@@ -1,10 +1,11 @@
 <form>
-	<input type="number" placeholder="Enter parent ID" #pid>
+	<input type="number" placeholder="Enter parent ID" value="{{selectedNode ? selectedNode.id : 0}}" #pid>
 	<input type="text" placeholder="Enter some data" #data>
 	<button (click)="add(pid.value,data.value)">Add node</button>
 </form>
 
-<h2>Select tree</h2>
+<h2>Select tree/subtree</h2>
+<p>Clicking on any node from the list below renders its tree immediatelly. You will also be able to modify/delete this node.</p>
 <ul class="tree">
     <li *ngFor="let node of nodes" [class.selected]="node === selectedNode" (click)="onSelect(node)">
       <span class="id">ID#{{node.id}}, PID#{{node.parent}}</span>
@@ -14,4 +15,4 @@
 
  <node-detail [node]="selectedNode" (deleteNode)="deleteNode($event)" (saveNode)="saveNode($event)"></node-detail>
 
- <tree *ngIf="selectedNode" [nodes]="selectedNode.children"></tree>
+ <tree *ngIf="selectedNode" [depth]="0" [nodes]="selectedNode.children" [root]="selectedNode"></tree>

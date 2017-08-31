@@ -8,7 +8,7 @@ import { TreeService } from '../tree.service';
 	selector: 'node-detail',
 	template: `
 	<div *ngIf="node">
-		<h2>Selected node with <strong>id {{node.id}}</strong> details:</h2>
+		<h4>Selected node with <strong>id {{node.id}}</strong> details:</h4>
 		<span></span>
 		<input [(ngModel)]="node.data" type="text" placeholder="Enter data">
 		<button (click)="save()">Save</button>

@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 import { TreeService } from '../tree.service';
 import { TreeComponent } from '../tree.component';
@@ -16,7 +16,9 @@ import { TreeComponent } from '../tree.component';
 })
 
 export class NodeAddComponent {
-	@Output() updateTree: EventEmitter<any> = new EventEmitter(); 
+
+	@Input() node:Node;
+
 	constructor(private treeService:TreeService) {}
 	add(pid: number, data: string): void {
 	  if (!pid) { return; }

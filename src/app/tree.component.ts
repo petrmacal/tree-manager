@@ -17,9 +17,11 @@ export class TreeComponent implements OnInit {
   	nodes: Node[];
   	selectedNode: Node;
 
-  	traverseNodes():void {
+  	traverseNodes(callback?):void {
 
   		let _nodes = this.nodes;
+
+  		!callback || Array.prototype.map.call(_nodes,callback);
 
 		for(let i = _nodes.length-1; i >= 0; i--) {
 			// If the node is already traversed, skip it
@@ -29,7 +31,11 @@ export class TreeComponent implements OnInit {
 			if(_nodes[i].parent !== null) pid = _nodes[i].parent;
 			
 			if(pid !== null) {
-				_nodes[this.getIndex(pid,_nodes)].children.push(_nodes[i]);
+				let childs = _nodes[this.getIndex(pid,_nodes)].children;
+				if(callback)
+					childs.unshift(_nodes[i]);
+				else
+					childs.push(_nodes[i]);
 			}
 
 			_nodes[i].traversed = true;
@@ -62,16 +68,26 @@ export class TreeComponent implements OnInit {
 		this.treeService
 		  .delete(node)
 		  .then(() => {
-		  	// Move childs of selected node to its parent node
-		  	node.children.forEach(((n) => n.parent = this.selectedNode.parent),this);
+		  	// Move childs of selected node being deleted into its parent node
+		  	node.children.forEach(((n) => { 
+		  		n.parent = this.selectedNode.parent; 
+		  		/* 	In case of not traverse nodes and recreating references of childrens after every deleting, 
+		  			I can push every children of node being deleted into its direct parent:
+
+		  			this.treeService.getNode(this.selectedNode.parent).then(m => m.children.push(n)); 
+		  		*/
+		  	}),this);
+
 		    this.nodes = this.nodes.filter(n => n !== node);
+		    /*
 		    if(node.parent !== null && this.nodes[node.parent]) {
 		    	let _index = this.getIndex(node.id,this.nodes[node.parent].children);
 		  		this.nodes[node.parent].children.splice(_index,1);
 		    }
+		    */
 		    if (this.selectedNode === node) { this.selectedNode = null; }
 
-		    this.traverseNodes();
+		    this.traverseNodes((function(n) { n.children = []; n.traversed = false; }));
 		});
 	}
 
