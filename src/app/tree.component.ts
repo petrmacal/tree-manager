@@ -22,7 +22,7 @@ export class TreeComponent implements OnInit {
 
   	/* Select from traverseDFS or traverseBFS */
   	private traversalMode = this.traverseDFS;
-  	private traversalModeName = "DFS"; 
+  	public traversalModeName = "DFS"; 
 
   	traverseDFS(callback = null): void {
   		let depth = 0;
