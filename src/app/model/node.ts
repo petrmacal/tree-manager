@@ -2,8 +2,10 @@ export class Node {
 	id: number;
 	data: string;
 	parent: number|null;
-	children?: [Node];
-	traversed?: boolean;
+	children?: Node[];
 
-	constructor() { this.traversed = false; }
+	constructor(data:string,parent:number) {
+		this.data = data;
+		this.children = [];
+	}
 }

@@ -19,13 +19,13 @@ import { TreeService } from '../tree.service';
 
 export class NodeCompontent {
 	@Input() node: Node;
-	@Output() deleteNode:EventEmitter<Node> = new EventEmitter<Node>();
+	@Output() deleteNode:EventEmitter<object> = new EventEmitter<object>();
 	@Output() saveNode:EventEmitter<any> = new EventEmitter<any>();
 
 	constructor(private treeService: TreeService) { }
  
-	delete(node:Node):void {
-		this.deleteNode.emit(this.node);
+	delete():void {
+		this.deleteNode.emit({id:this.node.id, pid:this.node.parent});
 	}
 
 	save():void {

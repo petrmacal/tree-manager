@@ -4,15 +4,8 @@
 	<button (click)="add(pid.value,data.value)">Add node</button>
 </form>
 
-<h2>Select tree/subtree</h2>
-<p>Clicking on any node from the list below renders its tree immediatelly. You will also be able to modify/delete this node.</p>
-<ul class="tree">
-    <li *ngFor="let node of nodes" [class.selected]="node === selectedNode" (click)="onSelect(node)">
-      <span class="id">ID#{{node.id}}, PID#{{node.parent}}</span>
-      <span class="data">{{node.data}}</span>
-    </li>
-</ul>
+<h3>Selected traversal mode: <u>{{traversalModeName}}</u></h3>
+<button (click)="switchTraversalMode()">Switch</button>
 
- <node-detail [node]="selectedNode" (deleteNode)="deleteNode($event)" (saveNode)="saveNode($event)"></node-detail>
 
- <tree *ngIf="selectedNode" [depth]="0" [nodes]="selectedNode.children" [root]="selectedNode"></tree>
+ <tree *ngIf="selectedNode" [depth]="0" [actualTraverse]="actualTraverse" (deleteNode)="deleteNode($event)"></tree>

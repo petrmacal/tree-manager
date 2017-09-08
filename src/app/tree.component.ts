@@ -1,9 +1,11 @@
-import { Component, OnInit, OnChanges } from '@angular/core';
+import { Component, OnInit, OnChanges, Output } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { Tree } from './model/tree';
 import { Node } from './model/node';
 import { TreeService } from './tree.service';
+
+import { Queue } from 'typescript-collections';
 
 @Component({
   selector: 'tree-container',
@@ -16,79 +18,135 @@ export class TreeComponent implements OnInit {
 	tree: Tree;
   	nodes: Node[];
   	selectedNode: Node;
+  	actualTraverse:Array<Node[]> = [];
 
-  	traverseNodes(callback?):void {
+  	/* Select from traverseDFS or traverseBFS */
+  	private traversalMode = this.traverseDFS;
+  	private traversalModeName = "DFS"; 
 
-  		let _nodes = this.nodes;
+  	traverseDFS(callback = null): void {
+  		let depth = 0;
+	    (function recurse(currentNode, depth) {
+	        for (var i = 0, length = currentNode.children.length; i < length; i++) {
+	            recurse(currentNode.children[i],depth+1);
+	        }
+	 		
+	        (!callback || callback(currentNode, depth));
+	    })(this.tree.root,0);
+  	}
 
-  		!callback || Array.prototype.map.call(_nodes,callback);
+  	traverseBFS(callback = null): void {
+	    var queue = new Queue<[Node,number]>();
+	     
+	    queue.enqueue([this.tree.root,0]);
+	 
+	    let currentTree = queue.dequeue();
 
-		for(let i = _nodes.length-1; i >= 0; i--) {
-			// If the node is already traversed, skip it
-			if(_nodes[i].traversed) continue;
+	    while(currentTree){
+	        for (var i = 0, length = currentTree[0].children.length; i < length; i++) {
+	            queue.enqueue([currentTree[0].children[i],currentTree[1]+1]);
+	        }
 
-			let pid = null;
-			if(_nodes[i].parent !== null) pid = _nodes[i].parent;
-			
-			if(pid !== null) {
-				let childs = _nodes[this.getIndex(pid,_nodes)].children;
-				if(callback)
-					childs.unshift(_nodes[i]);
-				else
-					childs.push(_nodes[i]);
-			}
+	        !callback || callback(currentTree[0], currentTree[1]);
 
-			_nodes[i].traversed = true;
-		}
-
-		console.log(_nodes);
-
+	        currentTree = queue.dequeue();
+	    }
   	}
 
 	add(pid: number, data: string): void {
-	  if(this.nodes.length !== 0 && !this.contains(pid)) {
-	  	alert('This ID does not exists');
-	  	return;
-	  }
-	  if (pid == null) { pid = null; }
-	  this.treeService.create(pid,data)
-	    .then(
-	    	(node) => { this.nodes.push(node); this.traverseNodes(); }
-	    );
-	}
+		let node = null,
+		    parent = null,
+		    callback = (node => {
+		        if (node.id == pid) {
+		            parent = node;
+		        }
+		    });
+		  
 
-	contains(id:number):boolean {
-		for(let n of this.nodes) {
-			if(id==n.id) return true;
+		this.contains(callback, this.traversalMode);
+
+		if (parent) {
+		  	this.treeService.create(pid,data)
+		    	.then(
+		    		(node) => { 
+		    			//this.nodes.push(node),
+		    			this.actualTraverse = [[]];
+		    			parent.children.push(node),
+		    			node.parent = parent.id; 
+		    			this.contains((node,depth) => {
+		    				this.actualTraverse[depth] || (this.actualTraverse[depth] = []);
+		    				this.actualTraverse[depth].push(node); 
+		    			}, this.traversalMode);
+		    		}
+		    );
+			
+		} else {
+			alert('There is no parent node with specified id');
 		}
-		return false;
 	}
 
-	deleteNode(node: Node):void {
-		this.treeService
-		  .delete(node)
-		  .then(() => {
-		  	// Move childs of selected node being deleted into its parent node
-		  	node.children.forEach(((n) => { 
-		  		n.parent = this.selectedNode.parent; 
-		  		/* 	In case of not traverse nodes and recreating references of childrens after every deleting, 
-		  			I can push every children of node being deleted into its direct parent:
+	contains(callback, traverse) {
+		traverse.call(this, callback);
+	}
 
-		  			this.treeService.getNode(this.selectedNode.parent).then(m => m.children.push(n)); 
-		  		*/
-		  	}),this);
+	deleteNode(data):void {
 
-		    this.nodes = this.nodes.filter(n => n !== node);
-		    /*
-		    if(node.parent !== null && this.nodes[node.parent]) {
-		    	let _index = this.getIndex(node.id,this.nodes[node.parent].children);
-		  		this.nodes[node.parent].children.splice(_index,1);
-		    }
-		    */
-		    if (this.selectedNode === node) { this.selectedNode = null; }
+		let id = data.id, 
+			pid = data.pid,
+			tree = this,
+	    	parent = null,
+	    	index,
+	    nodeToRemove;
 
-		    this.traverseNodes((function(n) { n.children = []; n.traversed = false; }));
+		let callback = (node => {
+		        if (node.id == pid) {
+		            parent = node;
+		        }
 		});
+	 
+	    this.contains(callback, this.traversalMode);
+	 
+	    if (parent) {
+	        index = this.getIndex(id, parent.children);
+	 
+	        if (index === undefined) {
+	            alert('Node to remove does not exist.');
+	        } else {
+
+	        	nodeToRemove = parent.children.splice(index, 1)[0];
+	        	this.treeService
+				  .delete(nodeToRemove)
+				  .then(() => {
+				  	this.actualTraverse = [[]];
+				  	nodeToRemove.children.forEach(((n) => { 
+				  		n.parent = pid,
+				  		parent.children.push(n); 				  		
+				  	}),this);	
+	    			this.contains((node,depth) => {
+	    				this.actualTraverse[depth] || (this.actualTraverse[depth] = []);
+	    				this.actualTraverse[depth].push(node); 
+	    			}, this.traversalMode);				  	
+				    this.nodes = this.nodes.filter(n => n !== nodeToRemove);
+				    if (this.selectedNode === nodeToRemove) { this.selectedNode = null; }
+				});
+	        }
+	    } else {
+	        alert('Parent does not exist.');
+	    }
+
+	}
+
+	switchTraversalMode() {
+		this.actualTraverse = [[]];
+
+		this.traversalModeName = (this.traversalModeName === 'DFS' ? 'BFS' : 'DFS'),
+		this.traversalMode = (this.traversalModeName === 'DFS' ? this.traverseBFS : this.traverseDFS);
+
+		this.contains((node,depth) => {
+			this.actualTraverse[depth] || (this.actualTraverse[depth] = []);
+			this.actualTraverse[depth].push(node); 
+		}, this.traversalMode);	
+
 	}
 
 	saveNode(event:boolean) {
@@ -100,20 +158,23 @@ export class TreeComponent implements OnInit {
   	}
 
   	getNodes():void {
-  		this.treeService.getNodes().then(nodes => this.nodes = nodes);
+  		this.treeService.getNodes().then(nodes => { 
+  			this.nodes = nodes, 
+  			this.tree.root = this.selectedNode = this.nodes[0];
+  			//this.contains(node => { this.actualTraverse[0] || (this.actualTraverse[0] = []), this.actualTraverse[0].push(node); }, this.traversalMode);
+  		});
   	}
 
   	ngOnInit():void {
-  		this.tree = {root: null, nodes: []};
+  		this.tree = {root: null};
   		this.getNodes();
-  		console.log(this.tree);
-
   	}
 
   	private getIndex(id, arr):number {
   		for(let i = 0; i < arr.length; i++) {
   			if(arr[i].id == id) return i;
   		}
+  		return undefined;
   	}
 
 }
